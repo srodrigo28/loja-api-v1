@@ -1,0 +1,4 @@
+insert into lojas (name, slug, owner_name, owner_email, password_hash, whatsapp, cnpj, pix_key, zip_code, state, city, district, street, street_number, complement, status)
+values
+    ('Aurora Atelier', 'aurora-atelier', 'Marina Alves', 'marina@auroraatelier.com', '6831b8706dbf1b4fd24044c7481d8761f59d8a394fc84e7e1c357e59e52639a4', '(11) 98888-1100', '12345678000195', 'pix@auroraatelier.com', '01310-100', 'SP', 'Sao Paulo', 'Bela Vista', 'Avenida Paulista', '1000', 'Conjunto 12', 'active'),
+    ('Casa Horizonte', 'casa-horizonte', 'Paulo Castro', 'paulo@casahorizonte.com', '6831b8706dbf1b4fd24044c7481d8761f59d8a394fc84e7e1c357e59e52639a4', '(31) 97777-2200', '98765432000110', 'pix@casahorizonte.com', '30130-110', 'MG', 'Belo Horizonte', 'Centro', 'Avenida Afonso Pena', '300', 'Loja 5', 'draft');

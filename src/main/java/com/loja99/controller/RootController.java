@@ -20,7 +20,8 @@ public class RootController {
                 "links", Map.of(
                         "health", "/actuator/health",
                         "usuarios", "/api/usuarios",
-                        "categorias", "/api/categorias"
+                        "categorias", "/api/categorias",
+                        "lojas", "/api/lojas"
                 ),
                 "recursos", List.of(
                         Map.of(
@@ -43,6 +44,17 @@ public class RootController {
                                         Map.of("metodo", "POST", "path", "/api/categorias", "descricao", "Cria uma nova categoria"),
                                         Map.of("metodo", "PUT", "path", "/api/categorias/{id}", "descricao", "Atualiza uma categoria existente"),
                                         Map.of("metodo", "DELETE", "path", "/api/categorias/{id}", "descricao", "Remove uma categoria")
+                                )
+                        ),
+                        Map.of(
+                                "nome", "lojas",
+                                "basePath", "/api/lojas",
+                                "endpoints", List.of(
+                                        Map.of("metodo", "GET", "path", "/api/lojas", "descricao", "Lista todas as lojas"),
+                                        Map.of("metodo", "GET", "path", "/api/lojas/{id}", "descricao", "Busca uma loja por id"),
+                                        Map.of("metodo", "POST", "path", "/api/lojas", "descricao", "Cria uma nova loja"),
+                                        Map.of("metodo", "PUT", "path", "/api/lojas/{id}", "descricao", "Atualiza uma loja existente"),
+                                        Map.of("metodo", "DELETE", "path", "/api/lojas/{id}", "descricao", "Remove uma loja")
                                 )
                         )
                 )));
