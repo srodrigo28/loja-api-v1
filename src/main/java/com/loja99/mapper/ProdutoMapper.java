@@ -9,10 +9,12 @@ import org.springframework.stereotype.Component;
 import com.loja99.dto.request.ProdutoRequest;
 import com.loja99.dto.response.ProdutoImagemResponse;
 import com.loja99.dto.response.ProdutoResponse;
+import com.loja99.dto.response.ProdutoVarianteResponse;
 import com.loja99.entity.Categoria;
 import com.loja99.entity.Loja;
 import com.loja99.entity.Produto;
 import com.loja99.entity.ProdutoImagem;
+import com.loja99.entity.ProdutoVariante;
 
 @Component
 public class ProdutoMapper {
@@ -61,6 +63,11 @@ public class ProdutoMapper {
                 .map(this::toImageResponse)
                 .toList();
 
+        List<ProdutoVarianteResponse> variants = entity.getVariants().stream()
+                .sorted(Comparator.comparing(ProdutoVariante::getPosition))
+                .map(this::toVariantResponse)
+                .toList();
+
         String mainImageUrl = entity.getImages().stream()
                 .filter(ProdutoImagem::isMain)
                 .min(Comparator.comparing(ProdutoImagem::getPosition))
@@ -86,6 +93,7 @@ public class ProdutoMapper {
                 .notes(entity.getNotes())
                 .mainImageUrl(mainImageUrl)
                 .images(images)
+                .variants(variants)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -101,11 +109,24 @@ public class ProdutoMapper {
                 .build();
     }
 
-    private String normalizeNullable(String value) {
+    public ProdutoVarianteResponse toVariantResponse(ProdutoVariante entity) {
+        return ProdutoVarianteResponse.builder()
+                .id(entity.getId())
+                .sizeLabel(entity.getSizeLabel())
+                .priceRetail(entity.getPriceRetail())
+                .priceWholesale(entity.getPriceWholesale())
+                .pricePromotion(entity.getPricePromotion())
+                .stock(entity.getStock())
+                .minStock(entity.getMinStock())
+                .position(entity.getPosition())
+                .build();
+    }
+
+    public String normalizeNullable(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    private String normalizeSlug(String value) {
+    public String normalizeSlug(String value) {
         return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase()

@@ -1,9 +1,11 @@
 package com.loja99.dto.request;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -80,4 +82,7 @@ public class ProdutoRequest {
 
     @Size(max = 500, message = "As notas do produto devem ter no maximo 500 caracteres.")
     private String notes;
+
+    @Valid
+    private List<ProdutoVarianteRequest> variants;
 }

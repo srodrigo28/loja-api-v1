@@ -151,6 +151,38 @@ class ProdutoControllerTests {
     }
 
     @Test
+    void deveCriarEAtualizarProdutoComVariantesDeTamanho() throws Exception {
+        MvcResult createResult = mockMvc.perform(post("/api/produtos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(produtoComVariantesJson("Calca Skinny", "calca-skinny")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.stock").value(45))
+                .andExpect(jsonPath("$.data.minStock").value(3))
+                .andExpect(jsonPath("$.data.variants", hasSize(3)))
+                .andExpect(jsonPath("$.data.variants[0].sizeLabel").value("34"))
+                .andExpect(jsonPath("$.data.variants[1].sizeLabel").value("36"))
+                .andExpect(jsonPath("$.data.variants[2].sizeLabel").value("38"))
+                .andReturn();
+
+        Integer produtoId = objectMapper.readTree(createResult.getResponse().getContentAsString()).get("data").get("id").asInt();
+
+        mockMvc.perform(patch("/api/produtos/{id}", produtoId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(produtoComVariantesAtualizadoJson("Calca Skinny Nova", "calca-skinny-nova")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("Calca Skinny Nova"))
+                .andExpect(jsonPath("$.data.stock").value(42))
+                .andExpect(jsonPath("$.data.minStock").value(4))
+                .andExpect(jsonPath("$.data.variants", hasSize(3)))
+                .andExpect(jsonPath("$.data.variants[0].sizeLabel").value("34"))
+                .andExpect(jsonPath("$.data.variants[0].stock").value(0))
+                .andExpect(jsonPath("$.data.variants[1].sizeLabel").value("36"))
+                .andExpect(jsonPath("$.data.variants[1].stock").value(12))
+                .andExpect(jsonPath("$.data.variants[2].sizeLabel").value("40"))
+                .andExpect(jsonPath("$.data.variants[2].stock").value(30));
+    }
+
+    @Test
     void deveRemoverImagemESegurarUltimaImagem() throws Exception {
         Integer produtoId = criarProduto();
         MvcResult uploadResult = mockMvc.perform(multipart("/api/produtos/{id}/images", produtoId)
@@ -222,6 +254,61 @@ class ProdutoControllerTests {
     }
 
     private String produtoJson(String name, String slug) {
+        return baseProdutoJson(name, slug, "[]");
+    }
+
+    private String produtoComVariantesJson(String name, String slug) {
+        return baseProdutoJson(name, slug, """
+                  [
+                    {
+                      "size_label": "34",
+                      "stock": 10,
+                      "min_stock": 1,
+                      "position": 1
+                    },
+                    {
+                      "size_label": "36",
+                      "stock": 15,
+                      "min_stock": 1,
+                      "position": 2
+                    },
+                    {
+                      "size_label": "38",
+                      "stock": 20,
+                      "min_stock": 1,
+                      "position": 3
+                    }
+                  ]
+                """);
+    }
+
+    private String produtoComVariantesAtualizadoJson(String name, String slug) {
+        return baseProdutoJson(name, slug, """
+                  [
+                    {
+                      "size_label": "34",
+                      "stock": 0,
+                      "min_stock": 1,
+                      "position": 1
+                    },
+                    {
+                      "size_label": "36",
+                      "stock": 12,
+                      "min_stock": 1,
+                      "position": 2
+                    },
+                    {
+                      "size_label": "40",
+                      "stock": 30,
+                      "min_stock": 2,
+                      "position": 3,
+                      "price_retail": 259.90
+                    }
+                  ]
+                """);
+    }
+
+    private String baseProdutoJson(String name, String slug, String variantsJson) {
         return """
                 {
                   "store_id": %d,
@@ -237,9 +324,10 @@ class ProdutoControllerTests {
                   "min_stock": 2,
                   "status": "draft",
                   "is_featured": false,
-                  "notes": null
+                  "notes": null,
+                  "variants": %s
                 }
-                """.formatted(loja.getId(), categoria.getId(), name, slug);
+                """.formatted(loja.getId(), categoria.getId(), name, slug, variantsJson);
     }
 
     private MockMultipartFile imageFile(String filename) {

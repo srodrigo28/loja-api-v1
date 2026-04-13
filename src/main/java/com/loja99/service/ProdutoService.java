@@ -2,19 +2,23 @@ package com.loja99.service;
 
 import java.text.Normalizer;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.loja99.dto.request.ProdutoRequest;
+import com.loja99.dto.request.ProdutoVarianteRequest;
 import com.loja99.dto.response.ProdutoImagemResponse;
 import com.loja99.dto.response.ProdutoResponse;
 import com.loja99.entity.Categoria;
 import com.loja99.entity.Loja;
 import com.loja99.entity.Produto;
 import com.loja99.entity.ProdutoImagem;
+import com.loja99.entity.ProdutoVariante;
 import com.loja99.exception.BusinessException;
 import com.loja99.exception.ResourceNotFoundException;
 import com.loja99.mapper.ProdutoMapper;
@@ -43,6 +47,8 @@ public class ProdutoService {
         validarSlugDuplicado(loja.getId(), request.getSlug(), null);
 
         Produto produto = produtoMapper.toEntity(request, loja, categoria);
+        syncVariants(produto, request.getVariants());
+        aplicarResumoDeEstoque(produto, request);
         return produtoMapper.toResponse(produtoRepository.save(produto));
     }
 
@@ -70,6 +76,8 @@ public class ProdutoService {
         validarSlugDuplicado(loja.getId(), request.getSlug(), id);
 
         produtoMapper.updateEntity(produto, request, loja, categoria);
+        syncVariants(produto, request.getVariants());
+        aplicarResumoDeEstoque(produto, request);
         return produtoMapper.toResponse(produtoRepository.save(produto));
     }
 
@@ -179,6 +187,57 @@ public class ProdutoService {
         }
     }
 
+    private void syncVariants(Produto produto, List<ProdutoVarianteRequest> requests) {
+        if (requests == null) {
+            return;
+        }
+
+        validarVariantesDuplicadas(requests);
+        produto.getVariants().clear();
+
+        for (int index = 0; index < requests.size(); index++) {
+            ProdutoVarianteRequest request = requests.get(index);
+            ProdutoVariante variante = ProdutoVariante.builder()
+                    .produto(produto)
+                    .sizeLabel(normalizeSizeLabel(request.getSizeLabel()))
+                    .priceRetail(request.getPriceRetail())
+                    .priceWholesale(request.getPriceWholesale())
+                    .pricePromotion(request.getPricePromotion())
+                    .stock(request.getStock())
+                    .minStock(request.getMinStock())
+                    .position(request.getPosition() == null ? index + 1 : request.getPosition())
+                    .build();
+            produto.getVariants().add(variante);
+        }
+    }
+
+    private void aplicarResumoDeEstoque(Produto produto, ProdutoRequest request) {
+        if (!produto.getVariants().isEmpty()) {
+            int totalStock = produto.getVariants().stream()
+                    .map(ProdutoVariante::getStock)
+                    .reduce(0, Integer::sum);
+            int totalMinStock = produto.getVariants().stream()
+                    .map(ProdutoVariante::getMinStock)
+                    .reduce(0, Integer::sum);
+            produto.setStock(totalStock);
+            produto.setMinStock(totalMinStock);
+            return;
+        }
+
+        produto.setStock(request.getStock());
+        produto.setMinStock(request.getMinStock());
+    }
+
+    private void validarVariantesDuplicadas(List<ProdutoVarianteRequest> requests) {
+        Set<String> normalizedLabels = new HashSet<>();
+        for (ProdutoVarianteRequest request : requests) {
+            String sizeLabel = normalizeSizeLabel(request.getSizeLabel());
+            if (!normalizedLabels.add(sizeLabel)) {
+                throw new BusinessException("Nao e permitido repetir o mesmo size_label no produto.");
+            }
+        }
+    }
+
     private void validarSlugDuplicado(Integer lojaId, String slug, Integer idIgnorado) {
         String normalizedSlug = normalizeSlug(slug);
         boolean duplicado = idIgnorado == null
@@ -188,6 +247,10 @@ public class ProdutoService {
         if (duplicado) {
             throw new BusinessException("Ja existe um produto cadastrado com este slug nesta loja.");
         }
+    }
+
+    private String normalizeSizeLabel(String value) {
+        return value == null ? null : value.trim().toUpperCase();
     }
 
     private String normalizeSlug(String value) {

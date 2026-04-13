@@ -98,4 +98,9 @@ public class Produto {
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     private List<ProdutoImagem> images = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<ProdutoVariante> variants = new ArrayList<>();
 }

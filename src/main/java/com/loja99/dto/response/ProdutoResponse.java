@@ -26,6 +26,7 @@ public record ProdutoResponse(
         String notes,
         String mainImageUrl,
         List<ProdutoImagemResponse> images,
+        List<ProdutoVarianteResponse> variants,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
