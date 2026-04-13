@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import com.loja99.dto.request.EnderecoRequest;
 import com.loja99.dto.request.UsuarioRequest;
-import com.loja99.dto.response.CategoriaResumoResponse;
 import com.loja99.dto.response.EnderecoResponse;
 import com.loja99.dto.response.UsuarioResponse;
 import com.loja99.entity.Endereco;
@@ -32,21 +31,13 @@ public class UsuarioMapper {
     }
 
     public UsuarioResponse toResponse(Usuario entity) {
-        List<CategoriaResumoResponse> categorias = entity.getCategorias().stream()
-                .map(categoria -> CategoriaResumoResponse.builder()
-                        .id(categoria.getId())
-                        .nome(categoria.getNome())
-                        .descricao(categoria.getDescricao())
-                        .build())
-                .toList();
-
         return UsuarioResponse.builder()
                 .id(entity.getId())
                 .nome(entity.getNome())
                 .email(entity.getEmail())
                 .telefone(entity.getTelefone())
                 .endereco(toEnderecoResponse(entity.getEndereco()))
-                .categorias(categorias)
+                .categorias(List.of())
                 .build();
     }
 

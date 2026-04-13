@@ -20,10 +20,16 @@ public class CategoriaRequest {
     @Size(max = 100, message = "O nome da categoria deve ter no maximo 100 caracteres.")
     private String nome;
 
-    @NotBlank(message = "A descricao da categoria e obrigatoria.")
-    @Size(max = 255, message = "A descricao da categoria deve ter no maximo 255 caracteres.")
-    private String descricao;
+    @NotBlank(message = "O slug da categoria e obrigatorio.")
+    @Size(max = 120, message = "O slug da categoria deve ter no maximo 120 caracteres.")
+    private String slug;
 
-    @NotNull(message = "O usuarioId e obrigatorio.")
-    private Integer usuarioId;
+    @Size(max = 120, message = "O imageId deve ter no maximo 120 caracteres.")
+    private String imageId;
+
+    @NotNull(message = "O lojaId e obrigatorio.")
+    private Integer lojaId;
+
+    @NotNull(message = "O ativo e obrigatorio.")
+    private Boolean ativo;
 }

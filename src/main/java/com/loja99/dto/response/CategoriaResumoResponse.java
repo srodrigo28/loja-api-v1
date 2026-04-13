@@ -6,6 +6,6 @@ import lombok.Builder;
 public record CategoriaResumoResponse(
         Integer id,
         String nome,
-        String descricao
+        String slug
 ) {
 }

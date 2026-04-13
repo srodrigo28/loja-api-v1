@@ -39,9 +39,9 @@ public class RootController {
                                 "nome", "categorias",
                                 "basePath", "/api/categorias",
                                 "endpoints", List.of(
-                                        Map.of("metodo", "GET", "path", "/api/categorias", "descricao", "Lista todas as categorias"),
+                                        Map.of("metodo", "GET", "path", "/api/categorias", "descricao", "Lista categorias e pode filtrar por lojaId"),
                                         Map.of("metodo", "GET", "path", "/api/categorias/{id}", "descricao", "Busca uma categoria por id"),
-                                        Map.of("metodo", "POST", "path", "/api/categorias", "descricao", "Cria uma nova categoria"),
+                                        Map.of("metodo", "POST", "path", "/api/categorias", "descricao", "Cria uma nova categoria para uma loja"),
                                         Map.of("metodo", "PUT", "path", "/api/categorias/{id}", "descricao", "Atualiza uma categoria existente"),
                                         Map.of("metodo", "DELETE", "path", "/api/categorias/{id}", "descricao", "Remove uma categoria")
                                 )

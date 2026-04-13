@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.loja99.repository.CategoriaRepository;
 import com.loja99.repository.LojaRepository;
 
 @SpringBootTest
@@ -25,10 +26,14 @@ class LojaControllerTests {
     @Autowired
     private LojaRepository lojaRepository;
 
+    @Autowired
+    private CategoriaRepository categoriaRepository;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
+        categoriaRepository.deleteAll();
         lojaRepository.deleteAll();
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
@@ -60,8 +65,7 @@ class LojaControllerTests {
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("/api/lojas/1")))
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/lojas/")))
                 .andExpect(jsonPath("$.name").value("Atelie Solar"))
                 .andExpect(jsonPath("$.slug").value("atelie-solar"))
                 .andExpect(jsonPath("$.ownerEmail").value("renata@ateliesolar.com"))

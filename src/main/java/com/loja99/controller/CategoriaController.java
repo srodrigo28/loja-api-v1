@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -41,8 +42,8 @@ public class CategoriaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoriaResponse>> listar() {
-        return ResponseEntity.ok(categoriaService.listar());
+    public ResponseEntity<List<CategoriaResponse>> listar(@RequestParam(required = false) Integer lojaId) {
+        return ResponseEntity.ok(categoriaService.listar(lojaId));
     }
 
     @GetMapping("/{id}")
