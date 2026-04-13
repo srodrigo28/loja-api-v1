@@ -3,17 +3,19 @@ package com.loja99.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.loja99.dto.request.CategoriaRequest;
@@ -31,9 +33,12 @@ public class CategoriaController {
 
     private final CategoriaService categoriaService;
 
-    @PostMapping
-    public ResponseEntity<CategoriaResponse> criar(@Valid @RequestBody CategoriaRequest request) {
-        CategoriaResponse response = categoriaService.criar(request);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CategoriaResponse> criar(
+            @Valid @ModelAttribute CategoriaRequest request,
+            @RequestParam("image") MultipartFile image
+    ) {
+        CategoriaResponse response = categoriaService.criar(request, image);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(response.id())
@@ -51,9 +56,13 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.buscarPorId(id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CategoriaResponse> atualizar(@PathVariable Integer id, @Valid @RequestBody CategoriaRequest request) {
-        return ResponseEntity.ok(categoriaService.atualizar(id, request));
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CategoriaResponse> atualizar(
+            @PathVariable Integer id,
+            @Valid @ModelAttribute CategoriaRequest request,
+            @RequestParam(value = "image", required = false) MultipartFile image
+    ) {
+        return ResponseEntity.ok(categoriaService.atualizar(id, request, image));
     }
 
     @DeleteMapping("/{id}")

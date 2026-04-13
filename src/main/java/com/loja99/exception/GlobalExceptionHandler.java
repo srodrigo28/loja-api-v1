@@ -8,8 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -31,6 +33,11 @@ public class GlobalExceptionHandler {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
         return buildResponse(HttpStatus.BAD_REQUEST, "Erro de validacao.", errors);
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<Map<String, Object>> handleMissingMultipartPart(Exception ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "A imagem da categoria e obrigatoria.", null);
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(

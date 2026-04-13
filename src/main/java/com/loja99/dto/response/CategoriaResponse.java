@@ -6,8 +6,9 @@ import lombok.Builder;
 public record CategoriaResponse(
         Integer id,
         String nome,
+        String descricao,
         String slug,
-        String imageId,
+        String image,
         Boolean ativo,
         Integer lojaId,
         String lojaNome

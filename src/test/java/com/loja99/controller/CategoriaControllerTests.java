@@ -2,20 +2,27 @@ package com.loja99.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -28,6 +35,8 @@ import com.loja99.repository.LojaRepository;
 
 @SpringBootTest
 class CategoriaControllerTests {
+
+    private static final Path TEST_UPLOAD_DIR = Path.of("target", "test-assets", "uploads");
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -43,7 +52,8 @@ class CategoriaControllerTests {
     private Loja loja;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
+        limparUploads();
         categoriaRepository.deleteAll();
         lojaRepository.deleteAll();
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
@@ -71,19 +81,26 @@ class CategoriaControllerTests {
 
     @Test
     void deveCriarCategoriaParaLojaComSucesso() throws Exception {
-        String payload = payloadCategoria("Vestidos", "vestidos", "img-vestidos-01", loja.getId(), true);
-
-        mockMvc.perform(post("/api/categorias")
-                        .contentType("application/json")
-                        .content(payload))
+        MvcResult result = mockMvc.perform(criarMultipartCategoria("Vestidos", "Moda feminina para eventos e ocasioes especiais.", loja.getId(), true, imageFile("vestidos.png")))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", containsString("/api/categorias/")))
                 .andExpect(jsonPath("$.nome").value("Vestidos"))
+                .andExpect(jsonPath("$.descricao").value("Moda feminina para eventos e ocasioes especiais."))
                 .andExpect(jsonPath("$.slug").value("vestidos"))
-                .andExpect(jsonPath("$.imageId").value("img-vestidos-01"))
+                .andExpect(jsonPath("$.image", startsWith("/uploads/categorias/")))
                 .andExpect(jsonPath("$.ativo").value(true))
                 .andExpect(jsonPath("$.lojaId").value(loja.getId()))
-                .andExpect(jsonPath("$.lojaNome").value("Aurora Atelier"));
+                .andExpect(jsonPath("$.lojaNome").value("Aurora Atelier"))
+                .andReturn();
+
+        assertImagemFoiSalva(result);
+    }
+
+    @Test
+    void deveRejeitarCriacaoSemImagem() throws Exception {
+        mockMvc.perform(criarMultipartCategoria("Vestidos", "Moda feminina para eventos e ocasioes especiais.", loja.getId(), true, null))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("A imagem da categoria e obrigatoria."));
     }
 
     @Test
@@ -109,14 +126,10 @@ class CategoriaControllerTests {
                         .build())
                 .build());
 
-        mockMvc.perform(post("/api/categorias")
-                        .contentType("application/json")
-                        .content(payloadCategoria("Vestidos", "vestidos", "img-vestidos-01", loja.getId(), true)))
+        mockMvc.perform(criarMultipartCategoria("Vestidos", "Moda feminina para eventos.", loja.getId(), true, imageFile("vestidos.png")))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/categorias")
-                        .contentType("application/json")
-                        .content(payloadCategoria("Decoracao", "decoracao", "img-decoracao-01", segundaLoja.getId(), true)))
+        mockMvc.perform(criarMultipartCategoria("Decoracao", "Objetos decorativos da loja.", segundaLoja.getId(), true, imageFile("decoracao.png")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/categorias").param("lojaId", String.valueOf(loja.getId())))
@@ -127,21 +140,23 @@ class CategoriaControllerTests {
 
     @Test
     void deveAtualizarCategoriaDaLoja() throws Exception {
-        Integer categoriaId = criarCategoriaERetornarId(payloadCategoria("Vestidos", "vestidos", "img-vestidos-01", loja.getId(), true));
+        Integer categoriaId = criarCategoriaERetornarId("Vestidos", "Moda feminina para eventos.", loja.getId(), true, imageFile("vestidos.png"));
 
-        mockMvc.perform(put("/api/categorias/{id}", categoriaId)
-                        .contentType("application/json")
-                        .content(payloadCategoria("Vestidos de Festa", "vestidos-festa", "img-vestidos-02", loja.getId(), false)))
+        MvcResult result = mockMvc.perform(atualizarMultipartCategoria(categoriaId, "Vestidos de Festa", "Modelos premium para festas e cerimonias.", loja.getId(), false, imageFile("vestidos-festa.webp")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Vestidos de Festa"))
-                .andExpect(jsonPath("$.slug").value("vestidos-festa"))
-                .andExpect(jsonPath("$.imageId").value("img-vestidos-02"))
-                .andExpect(jsonPath("$.ativo").value(false));
+                .andExpect(jsonPath("$.descricao").value("Modelos premium para festas e cerimonias."))
+                .andExpect(jsonPath("$.slug").value("vestidos-de-festa"))
+                .andExpect(jsonPath("$.image", startsWith("/uploads/categorias/")))
+                .andExpect(jsonPath("$.ativo").value(false))
+                .andReturn();
+
+        assertImagemFoiSalva(result);
     }
 
     @Test
     void deveExcluirCategoriaDaLoja() throws Exception {
-        Integer categoriaId = criarCategoriaERetornarId(payloadCategoria("Blusas", "blusas", "img-blusas-01", loja.getId(), true));
+        Integer categoriaId = criarCategoriaERetornarId("Blusas", "Blusas leves para o dia a dia.", loja.getId(), true, imageFile("blusas.jpg"));
 
         mockMvc.perform(delete("/api/categorias/{id}", categoriaId))
                 .andExpect(status().isNoContent());
@@ -151,10 +166,8 @@ class CategoriaControllerTests {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
-    private Integer criarCategoriaERetornarId(String payload) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/categorias")
-                        .contentType("application/json")
-                        .content(payload))
+    private Integer criarCategoriaERetornarId(String nome, String descricao, Integer lojaId, boolean ativo, MockMultipartFile image) throws Exception {
+        MvcResult result = mockMvc.perform(criarMultipartCategoria(nome, descricao, lojaId, ativo, image))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -162,15 +175,76 @@ class CategoriaControllerTests {
         return body.get("id").asInt();
     }
 
-    private String payloadCategoria(String nome, String slug, String imageId, Integer lojaId, boolean ativo) {
-        return """
-                {
-                  \"nome\": \"%s\",
-                  \"slug\": \"%s\",
-                  \"imageId\": \"%s\",
-                  \"lojaId\": %d,
-                  \"ativo\": %s
-                }
-                """.formatted(nome, slug, imageId, lojaId, ativo);
+    private MockMultipartHttpServletRequestBuilder criarMultipartCategoria(String nome, String descricao, Integer lojaId, boolean ativo, MockMultipartFile image) {
+        MockMultipartHttpServletRequestBuilder builder = multipart("/api/categorias")
+                .param("nome", nome)
+                .param("descricao", descricao)
+                .param("lojaId", String.valueOf(lojaId))
+                .param("ativo", String.valueOf(ativo));
+
+        if (image != null) {
+            builder.file(image);
+        }
+
+        return builder;
+    }
+
+    private MockMultipartHttpServletRequestBuilder atualizarMultipartCategoria(Integer id, String nome, String descricao, Integer lojaId, boolean ativo, MockMultipartFile image) {
+        MockMultipartHttpServletRequestBuilder builder = multipart("/api/categorias/{id}", id)
+                .file(image)
+                .param("nome", nome)
+                .param("descricao", descricao)
+                .param("lojaId", String.valueOf(lojaId))
+                .param("ativo", String.valueOf(ativo));
+
+        return builder.with(request -> {
+            request.setMethod("PUT");
+            return request;
+        });
+    }
+
+    private MockMultipartFile imageFile(String filename) {
+        return new MockMultipartFile(
+                "image",
+                filename,
+                contentTypeFor(filename),
+                "fake-image-content".getBytes()
+        );
+    }
+
+    private String contentTypeFor(String filename) {
+        String lower = filename.toLowerCase();
+        if (lower.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lower.endsWith(".webp")) {
+            return "image/webp";
+        }
+        return "image/jpeg";
+    }
+
+    private void assertImagemFoiSalva(MvcResult result) throws Exception {
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        String imagePath = body.get("image").asText();
+        String filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
+        Path savedFile = TEST_UPLOAD_DIR.resolve("categorias").resolve(filename);
+        org.junit.jupiter.api.Assertions.assertTrue(Files.exists(savedFile));
+    }
+
+    private void limparUploads() throws IOException {
+        if (!Files.exists(TEST_UPLOAD_DIR)) {
+            return;
+        }
+
+        try (var paths = Files.walk(TEST_UPLOAD_DIR)) {
+            paths.sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    });
+        }
     }
 }

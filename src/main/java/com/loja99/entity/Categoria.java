@@ -31,11 +31,14 @@ public class Categoria {
     @Column(nullable = false, length = 100)
     private String nome;
 
+    @Column(length = 255)
+    private String descricao;
+
     @Column(nullable = false, length = 120)
     private String slug;
 
-    @Column(name = "image_id", length = 120)
-    private String imageId;
+    @Column(name = "image", length = 255)
+    private String image;
 
     @Column(nullable = false)
     private boolean ativo;
