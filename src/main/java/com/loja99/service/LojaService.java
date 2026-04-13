@@ -1,9 +1,5 @@
 package com.loja99.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -25,11 +21,12 @@ public class LojaService {
 
     private final LojaRepository lojaRepository;
     private final LojaMapper lojaMapper;
+    private final PasswordHashService passwordHashService;
 
     @Transactional
     public LojaResponse criar(LojaRequest request) {
         validarDuplicidades(request, null);
-        Loja loja = lojaMapper.toEntity(request, hashPassword(request.getPassword()));
+        Loja loja = lojaMapper.toEntity(request, passwordHashService.hash(request.getPassword()));
         return lojaMapper.toResponse(lojaRepository.save(loja));
     }
 
@@ -49,7 +46,7 @@ public class LojaService {
     public LojaResponse atualizar(Integer id, LojaRequest request) {
         Loja loja = buscarEntidade(id);
         validarDuplicidades(request, id);
-        lojaMapper.updateEntity(loja, request, hashPassword(request.getPassword()));
+        lojaMapper.updateEntity(loja, request, passwordHashService.hash(request.getPassword()));
         return lojaMapper.toResponse(lojaRepository.save(loja));
     }
 
@@ -92,16 +89,6 @@ public class LojaService {
 
         if (cnpjDuplicado) {
             throw new BusinessException("Ja existe uma loja cadastrada com este CNPJ.");
-        }
-    }
-
-    private String hashPassword(String rawPassword) {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = messageDigest.digest(rawPassword.trim().getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("Nao foi possivel gerar o hash da senha.", ex);
         }
     }
 }
