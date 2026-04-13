@@ -73,7 +73,7 @@ public class LojaMapper {
 
     private String resolveStatus(String status) {
         if (status == null || status.isBlank()) {
-            return "draft";
+            return "active";
         }
         return status.trim().toLowerCase();
     }
