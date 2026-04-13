@@ -104,6 +104,13 @@ class CategoriaControllerTests {
     }
 
     @Test
+    void deveRejeitarCriacaoComTipoDeArquivoInvalido() throws Exception {
+        mockMvc.perform(criarMultipartCategoria("Vestidos", "Moda feminina para eventos e ocasioes especiais.", loja.getId(), true, invalidImageFile()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("A imagem da categoria deve estar em JPG, JPEG, PNG ou WEBP."));
+    }
+
+    @Test
     void deveListarCategoriasFiltrandoPorLoja() throws Exception {
         Loja segundaLoja = lojaRepository.save(Loja.builder()
                 .name("Casa Horizonte")
@@ -141,6 +148,7 @@ class CategoriaControllerTests {
     @Test
     void deveAtualizarCategoriaDaLoja() throws Exception {
         Integer categoriaId = criarCategoriaERetornarId("Vestidos", "Moda feminina para eventos.", loja.getId(), true, imageFile("vestidos.png"));
+        Path imagemAnterior = pathDaImagem(buscarImagemDaCategoria(categoriaId));
 
         MvcResult result = mockMvc.perform(atualizarMultipartCategoria(categoriaId, "Vestidos de Festa", "Modelos premium para festas e cerimonias.", loja.getId(), false, imageFile("vestidos-festa.webp")))
                 .andExpect(status().isOk())
@@ -152,11 +160,13 @@ class CategoriaControllerTests {
                 .andReturn();
 
         assertImagemFoiSalva(result);
+        org.junit.jupiter.api.Assertions.assertFalse(Files.exists(imagemAnterior));
     }
 
     @Test
     void deveExcluirCategoriaDaLoja() throws Exception {
         Integer categoriaId = criarCategoriaERetornarId("Blusas", "Blusas leves para o dia a dia.", loja.getId(), true, imageFile("blusas.jpg"));
+        Path imagemSalva = pathDaImagem(buscarImagemDaCategoria(categoriaId));
 
         mockMvc.perform(delete("/api/categorias/{id}", categoriaId))
                 .andExpect(status().isNoContent());
@@ -164,6 +174,8 @@ class CategoriaControllerTests {
         mockMvc.perform(get("/api/categorias").param("lojaId", String.valueOf(loja.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+
+        org.junit.jupiter.api.Assertions.assertFalse(Files.exists(imagemSalva));
     }
 
     private Integer criarCategoriaERetornarId(String nome, String descricao, Integer lojaId, boolean ativo, MockMultipartFile image) throws Exception {
@@ -173,6 +185,20 @@ class CategoriaControllerTests {
 
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
         return body.get("id").asInt();
+    }
+
+    private String buscarImagemDaCategoria(Integer categoriaId) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/categorias/{id}", categoriaId))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        return body.get("image").asText();
+    }
+
+    private Path pathDaImagem(String imagePath) {
+        String filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
+        return TEST_UPLOAD_DIR.resolve("categorias").resolve(filename);
     }
 
     private MockMultipartHttpServletRequestBuilder criarMultipartCategoria(String nome, String descricao, Integer lojaId, boolean ativo, MockMultipartFile image) {
@@ -212,6 +238,15 @@ class CategoriaControllerTests {
         );
     }
 
+    private MockMultipartFile invalidImageFile() {
+        return new MockMultipartFile(
+                "image",
+                "categoria.txt",
+                "text/plain",
+                "arquivo-invalido".getBytes()
+        );
+    }
+
     private String contentTypeFor(String filename) {
         String lower = filename.toLowerCase();
         if (lower.endsWith(".png")) {
@@ -226,8 +261,7 @@ class CategoriaControllerTests {
     private void assertImagemFoiSalva(MvcResult result) throws Exception {
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
         String imagePath = body.get("image").asText();
-        String filename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
-        Path savedFile = TEST_UPLOAD_DIR.resolve("categorias").resolve(filename);
+        Path savedFile = pathDaImagem(imagePath);
         org.junit.jupiter.api.Assertions.assertTrue(Files.exists(savedFile));
     }
 
