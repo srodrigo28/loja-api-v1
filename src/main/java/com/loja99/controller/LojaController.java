@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.loja99.dto.request.LojaRequest;
+import com.loja99.dto.request.LojaStatusRequest;
 import com.loja99.dto.response.LojaResponse;
 import com.loja99.service.LojaService;
 
@@ -53,6 +55,11 @@ public class LojaController {
     @PutMapping("/{id}")
     public ResponseEntity<LojaResponse> atualizar(@PathVariable Integer id, @Valid @RequestBody LojaRequest request) {
         return ResponseEntity.ok(lojaService.atualizar(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<LojaResponse> atualizarStatus(@PathVariable Integer id, @Valid @RequestBody LojaStatusRequest request) {
+        return ResponseEntity.ok(lojaService.atualizarStatus(id, request.status()));
     }
 
     @DeleteMapping("/{id}")

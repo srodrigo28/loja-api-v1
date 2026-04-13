@@ -51,6 +51,13 @@ public class LojaService {
     }
 
     @Transactional
+    public LojaResponse atualizarStatus(Integer id, String status) {
+        Loja loja = buscarEntidade(id);
+        loja.setStatus(status.trim().toLowerCase());
+        return lojaMapper.toResponse(lojaRepository.save(loja));
+    }
+
+    @Transactional
     public void deletar(Integer id) {
         Loja loja = buscarEntidade(id);
         lojaRepository.delete(loja);

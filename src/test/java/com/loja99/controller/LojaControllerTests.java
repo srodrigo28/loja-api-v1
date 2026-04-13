@@ -1,6 +1,7 @@
 package com.loja99.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -40,30 +41,9 @@ class LojaControllerTests {
 
     @Test
     void deveCriarLojaComSucesso() throws Exception {
-        String payload = """
-                {
-                  \"name\": \"Atelie Solar\",
-                  \"slug\": \"atelie-solar\",
-                  \"ownerName\": \"Renata Sol\",
-                  \"ownerEmail\": \"renata@ateliesolar.com\",
-                  \"password\": \"123123@\",
-                  \"whatsapp\": \"(11) 97777-9090\",
-                  \"cnpj\": \"12.345.678/0001-90\",
-                  \"pixKey\": \"pix@ateliesolar.com\",
-                  \"zipCode\": \"01310-100\",
-                  \"state\": \"sp\",
-                  \"city\": \"Sao Paulo\",
-                  \"district\": \"Bela Vista\",
-                  \"street\": \"Avenida Paulista\",
-                  \"number\": \"1500\",
-                  \"complement\": \"Sala 10\",
-                  \"status\": \"active\"
-                }
-                """;
-
         mockMvc.perform(post("/api/lojas")
                         .contentType("application/json")
-                        .content(payload))
+                        .content(payloadLoja("Atelie Solar", "atelie-solar", "renata@ateliesolar.com", "12.345.678/0001-90", "active")))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/lojas/")))
                 .andExpect(jsonPath("$.name").value("Atelie Solar"))
@@ -76,91 +56,73 @@ class LojaControllerTests {
 
     @Test
     void deveImpedirSlugDuplicado() throws Exception {
-        String payload = """
-                {
-                  \"name\": \"Atelie Solar\",
-                  \"slug\": \"atelie-solar\",
-                  \"ownerName\": \"Renata Sol\",
-                  \"ownerEmail\": \"renata@ateliesolar.com\",
-                  \"password\": \"123123@\",
-                  \"whatsapp\": \"(11) 97777-9090\",
-                  \"cnpj\": \"12.345.678/0001-90\",
-                  \"pixKey\": \"pix@ateliesolar.com\",
-                  \"zipCode\": \"01310-100\",
-                  \"state\": \"SP\",
-                  \"city\": \"Sao Paulo\",
-                  \"district\": \"Bela Vista\",
-                  \"street\": \"Avenida Paulista\",
-                  \"number\": \"1500\",
-                  \"complement\": \"Sala 10\",
-                  \"status\": \"active\"
-                }
-                """;
-
-        String payloadDuplicado = """
-                {
-                  \"name\": \"Atelie Lua\",
-                  \"slug\": \"atelie-solar\",
-                  \"ownerName\": \"Clara Lua\",
-                  \"ownerEmail\": \"clara@atelielua.com\",
-                  \"password\": \"123123@\",
-                  \"whatsapp\": \"(11) 98888-8080\",
-                  \"cnpj\": \"98.765.432/0001-10\",
-                  \"pixKey\": \"pix@atelielua.com\",
-                  \"zipCode\": \"01001-000\",
-                  \"state\": \"SP\",
-                  \"city\": \"Sao Paulo\",
-                  \"district\": \"Se\",
-                  \"street\": \"Praca da Se\",
-                  \"number\": \"100\",
-                  \"complement\": \"Sala 1\",
-                  \"status\": \"draft\"
-                }
-                """;
-
         mockMvc.perform(post("/api/lojas")
                         .contentType("application/json")
-                        .content(payload))
+                        .content(payloadLoja("Atelie Solar", "atelie-solar", "renata@ateliesolar.com", "12.345.678/0001-90", "active")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/lojas")
                         .contentType("application/json")
-                        .content(payloadDuplicado))
+                        .content(payloadLoja("Atelie Lua", "atelie-solar", "clara@atelielua.com", "98.765.432/0001-10", "draft")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Ja existe uma loja cadastrada com este slug."));
     }
 
     @Test
     void deveListarLojasCriadas() throws Exception {
-        String payload = """
-                {
-                  \"name\": \"Casa Serena\",
-                  \"slug\": \"casa-serena\",
-                  \"ownerName\": \"Marcos Luz\",
-                  \"ownerEmail\": \"marcos@casaserena.com\",
-                  \"password\": \"123123@\",
-                  \"whatsapp\": \"(31) 98888-7070\",
-                  \"cnpj\": \"44.555.666/0001-77\",
-                  \"pixKey\": \"pix@casaserena.com\",
-                  \"zipCode\": \"30130-110\",
-                  \"state\": \"MG\",
-                  \"city\": \"Belo Horizonte\",
-                  \"district\": \"Centro\",
-                  \"street\": \"Avenida Afonso Pena\",
-                  \"number\": \"300\",
-                  \"complement\": \"Loja 5\",
-                  \"status\": \"draft\"
-                }
-                """;
-
         mockMvc.perform(post("/api/lojas")
                         .contentType("application/json")
-                        .content(payload))
+                        .content(payloadLoja("Casa Serena", "casa-serena", "marcos@casaserena.com", "44.555.666/0001-77", "draft")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/lojas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Casa Serena"))
                 .andExpect(jsonPath("$[0].slug").value("casa-serena"));
+    }
+
+    @Test
+    void deveAtualizarStatusDaLojaComSucesso() throws Exception {
+        mockMvc.perform(post("/api/lojas")
+                        .contentType("application/json")
+                        .content(payloadLoja("Casa Serena", "casa-serena", "marcos@casaserena.com", "44.555.666/0001-77", "active")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("active"));
+
+        Integer lojaId = lojaRepository.findAll().stream()
+                .filter(loja -> "casa-serena".equals(loja.getSlug()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(patch("/api/lojas/" + lojaId + "/status")
+                        .contentType("application/json")
+                        .content("{\"status\":\"inactive\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(lojaId))
+                .andExpect(jsonPath("$.status").value("inactive"));
+    }
+
+    private String payloadLoja(String name, String slug, String ownerEmail, String cnpj, String status) {
+        return """
+                {
+                  "name": "%s",
+                  "slug": "%s",
+                  "ownerName": "Responsavel Teste",
+                  "ownerEmail": "%s",
+                  "password": "123123@",
+                  "whatsapp": "(11) 97777-9090",
+                  "cnpj": "%s",
+                  "pixKey": "pix@teste.com",
+                  "zipCode": "01310-100",
+                  "state": "SP",
+                  "city": "Sao Paulo",
+                  "district": "Bela Vista",
+                  "street": "Avenida Paulista",
+                  "number": "1500",
+                  "complement": "Sala 10",
+                  "status": "%s"
+                }
+                """.formatted(name, slug, ownerEmail, cnpj, status);
     }
 }
