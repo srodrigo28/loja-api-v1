@@ -1,9 +1,12 @@
 package com.loja99.service;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -193,21 +196,55 @@ public class ProdutoService {
         }
 
         validarVariantesDuplicadas(requests);
-        produto.getVariants().clear();
+
+        Map<Integer, ProdutoVariante> existentesPorId = new HashMap<>();
+        Map<String, ProdutoVariante> existentesPorTamanho = new HashMap<>();
+        for (ProdutoVariante varianteExistente : produto.getVariants()) {
+            if (varianteExistente.getId() != null) {
+                existentesPorId.put(varianteExistente.getId(), varianteExistente);
+            }
+            existentesPorTamanho.put(normalizeSizeLabel(varianteExistente.getSizeLabel()), varianteExistente);
+        }
+
+        List<ProdutoVariante> proximasVariantes = new ArrayList<>();
+        Set<ProdutoVariante> variantesMantidas = new HashSet<>();
 
         for (int index = 0; index < requests.size(); index++) {
             ProdutoVarianteRequest request = requests.get(index);
-            ProdutoVariante variante = ProdutoVariante.builder()
-                    .produto(produto)
-                    .sizeLabel(normalizeSizeLabel(request.getSizeLabel()))
-                    .priceRetail(request.getPriceRetail())
-                    .priceWholesale(request.getPriceWholesale())
-                    .pricePromotion(request.getPricePromotion())
-                    .stock(request.getStock())
-                    .minStock(request.getMinStock())
-                    .position(request.getPosition() == null ? index + 1 : request.getPosition())
-                    .build();
-            produto.getVariants().add(variante);
+            String sizeLabelNormalizado = normalizeSizeLabel(request.getSizeLabel());
+
+            ProdutoVariante variante = request.getId() != null
+                    ? existentesPorId.get(request.getId())
+                    : null;
+
+            if (variante == null) {
+                variante = existentesPorTamanho.get(sizeLabelNormalizado);
+            }
+
+            if (variante == null) {
+                variante = new ProdutoVariante();
+                variante.setProduto(produto);
+            }
+
+            variante.setProduto(produto);
+            variante.setSizeLabel(sizeLabelNormalizado);
+            variante.setPriceRetail(request.getPriceRetail());
+            variante.setPriceWholesale(request.getPriceWholesale());
+            variante.setPricePromotion(request.getPricePromotion());
+            variante.setStock(request.getStock());
+            variante.setMinStock(request.getMinStock());
+            variante.setPosition(request.getPosition() == null ? index + 1 : request.getPosition());
+
+            proximasVariantes.add(variante);
+            variantesMantidas.add(variante);
+        }
+
+        produto.getVariants().removeIf(variante -> !variantesMantidas.contains(variante));
+
+        for (ProdutoVariante variante : proximasVariantes) {
+            if (!produto.getVariants().contains(variante)) {
+                produto.getVariants().add(variante);
+            }
         }
     }
 
