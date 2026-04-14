@@ -19,13 +19,14 @@ public class WebConfig implements WebMvcConfigurer {
     public WebConfig(
             @Value("${app.cors.allowed-origin-patterns:http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app}")
             String allowedOriginPatternsValue,
-            @Value("${app.upload.base-dir:uploads}") String uploadBaseDir
+            @Value("${app.upload.base-dir:assets/uploads}") String uploadBaseDir,
+            UploadPathResolver uploadPathResolver
     ) {
         this.allowedOriginPatterns = Arrays.stream(allowedOriginPatternsValue.split(","))
                 .map(String::trim)
                 .filter(value -> !value.isBlank())
                 .toList();
-        this.uploadResourceLocation = Path.of(uploadBaseDir).toAbsolutePath().normalize().toUri().toString();
+        this.uploadResourceLocation = uploadPathResolver.resolveBaseDir(uploadBaseDir).toUri().toString();
     }
 
     @Override

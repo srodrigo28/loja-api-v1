@@ -11,6 +11,8 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import com.loja99.config.UploadPathResolver;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,8 +31,11 @@ public class ProdutoImageStorageService {
 
     private final Path productUploadDir;
 
-    public ProdutoImageStorageService(@Value("${app.upload.base-dir:assets/uploads}") String uploadBaseDir) {
-        this.productUploadDir = Path.of(uploadBaseDir).toAbsolutePath().normalize().resolve("products");
+    public ProdutoImageStorageService(
+            @Value("${app.upload.base-dir:assets/uploads}") String uploadBaseDir,
+            UploadPathResolver uploadPathResolver
+    ) {
+        this.productUploadDir = uploadPathResolver.resolveBaseDir(uploadBaseDir).resolve("products");
         ensureUploadDirectory(productUploadDir);
     }
 

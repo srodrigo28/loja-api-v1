@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import com.loja99.config.UploadPathResolver;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,8 +30,11 @@ public class CategoriaImageStorageService {
 
     private final Path categoryUploadDir;
 
-    public CategoriaImageStorageService(@Value("${app.upload.base-dir:assets/uploads}") String uploadBaseDir) {
-        this.categoryUploadDir = Path.of(uploadBaseDir).toAbsolutePath().normalize().resolve("categorias");
+    public CategoriaImageStorageService(
+            @Value("${app.upload.base-dir:assets/uploads}") String uploadBaseDir,
+            UploadPathResolver uploadPathResolver
+    ) {
+        this.categoryUploadDir = uploadPathResolver.resolveBaseDir(uploadBaseDir).resolve("categorias");
         ensureUploadDirectory();
     }
 
