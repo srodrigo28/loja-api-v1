@@ -29,6 +29,32 @@
 
 ## ✨ Destaques do projeto
 
+##  ✨✨ Rodar o projeto & Testes
+
+### Rodar o projeto
+
+```bash
+./mvnw.cmd spring-boot:run
+```
+
+Esse comando inicia a API Spring Boot usando as configuracoes de `application.properties`.
+
+### Rodar os testes
+
+```bash
+./mvnw.cmd test
+```
+
+Esse comando executa a suite automatizada com JUnit, Spring Boot Test, MockMvc e banco H2 em memoria.
+
+### Lista de testes automatizados
+
+- `Loja99ApplicationTests`: verifica se o contexto Spring Boot sobe corretamente.
+- `AuthControllerTests`: testa login com email e senha, rejeicao de senha invalida, sessao por Bearer Token, sessao por cookie e logout.
+- `LojaControllerTests`: testa criacao de loja, bloqueio de slug duplicado, listagem de lojas e atualizacao de status.
+- `CategoriaControllerTests`: testa criacao de categoria com imagem, validacao de imagem obrigatoria, rejeicao de tipo invalido, filtro por loja, atualizacao e exclusao com limpeza do arquivo enviado.
+- `ProdutoControllerTests`: testa criacao de produto, upload de imagens, troca de imagem principal, variantes de tamanho, remocao protegendo a ultima imagem, exclusao com limpeza de diretorio e listagem por loja.
+
 - API REST com operacoes completas de CRUD.
 - Persistencia com Spring Data JPA e Hibernate.
 - Banco PostgreSQL com schema versionado por Flyway.
