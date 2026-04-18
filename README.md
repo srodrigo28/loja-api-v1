@@ -4,6 +4,11 @@
   <img src="./assets/banner-loja99.svg" alt="Banner Loja99 API" />
 </p>
 
+```
+./mvnw.cmd spring-boot:run
+./mvnw.cmd test
+```
+
 <p align="center">
   <img alt="Java 21" src="https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk" />
   <img alt="Spring Boot 4.0.5" src="https://img.shields.io/badge/Spring%20Boot-4.0.5-6DB33F?style=for-the-badge&logo=springboot" />
